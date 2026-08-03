@@ -1,0 +1,23 @@
+[project]
+name = "codex-usage-linux"
+version = "0.1.1"
+description = "KDE Plasma widget and Linux tray indicator for ChatGPT Codex usage limits"
+requires-python = ">=3.10"
+license = "MIT"
+authors = [
+    { name = "Codex Usage Linux contributors" }
+]
+keywords = ["codex", "chatgpt", "kde", "plasma", "linux", "usage"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: GTK",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Topic :: Desktop Environment :: K Desktop Environment (KDE)",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/schlonz1975/codex-usage-linux"
+Issues = "https://github.com/schlonz1975/codex-usage-linux/issues"

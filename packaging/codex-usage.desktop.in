@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Codex Usage Tray (Fallback)
+Comment=Show remaining Codex usage as a portable tray indicator
+Exec=__EXECUTABLE__
+Icon=codex-usage
+Terminal=false
+Categories=Utility;
+StartupNotify=false

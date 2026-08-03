@@ -1,0 +1,19 @@
+{
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Codex Usage contributors"
+            }
+        ],
+        "Category": "System Information",
+        "Description": "Show remaining Codex usage in a KDE Plasma panel",
+        "Icon": "codex-usage",
+        "Id": "com.brkmen.codexusage",
+        "License": "MIT",
+        "Name": "Codex Usage",
+        "Version": "0.1.1",
+        "Website": "https://github.com/schlonz1975/codex-usage-linux"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "KPackageStructure": "Plasma/Applet"
+}

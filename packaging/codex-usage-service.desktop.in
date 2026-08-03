@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Codex Usage Service
+Comment=Provide Codex usage data to the Plasma widget
+Exec=__EXECUTABLE__ --service
+Icon=codex-usage
+Terminal=false
+NoDisplay=true
+StartupNotify=false
+X-KDE-autostart-after=panel
