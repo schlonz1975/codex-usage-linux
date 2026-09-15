@@ -4,12 +4,8 @@ import tempfile
 import unittest
 
 from codex_usage.notifications import NotificationMarkers
-from codex_usage.display import (
-    DISPLAY_BATTERY,
-    DISPLAY_PERCENTAGE,
-    DisplaySettings,
-    StatusIconRenderer,
-)
+from codex_usage.display import StatusIconRenderer
+import xml.etree.ElementTree as ET
 from codex_usage.usage import (
     display_snapshots,
     parse_limits,
@@ -116,24 +112,28 @@ class UsageTests(unittest.TestCase):
             self.assertFalse(markers.should_notify(snapshot))
             self.assertFalse(NotificationMarkers(path).should_notify(snapshot))
 
-    def test_display_mode_is_persistent(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "settings.json"
-            settings = DisplaySettings(path)
-            self.assertEqual(settings.mode, DISPLAY_BATTERY)
-            self.assertEqual(settings.toggle(), DISPLAY_PERCENTAGE)
-            self.assertEqual(DisplaySettings(path).mode, DISPLAY_PERCENTAGE)
-            self.assertEqual(settings.toggle(), DISPLAY_BATTERY)
-
-    def test_status_icons_are_generated_for_both_modes(self) -> None:
+    def test_ring_icons_cover_empty_partial_and_full_usage(self) -> None:
+        ns = {"svg": "http://www.w3.org/2000/svg"}
         with tempfile.TemporaryDirectory() as directory:
             renderer = StatusIconRenderer(Path(directory))
-            battery = renderer.render(73, DISPLAY_BATTERY)
-            percentage = renderer.render(9, DISPLAY_PERCENTAGE)
-            self.assertIn('width="26.28"', battery.read_text(encoding="utf-8"))
-            percentage_svg = percentage.read_text(encoding="utf-8")
-            self.assertIn(">9%</text>", percentage_svg)
-            self.assertIn("#f04b4b", percentage_svg)
+            empty = ET.parse(renderer.render(None, 0))
+            self.assertEqual(len(empty.findall(".//svg:circle", ns)), 2)
+            self.assertEqual(len(empty.findall(".//svg:path", ns)), 0)
+            partial = ET.parse(renderer.render(75, 40))
+            arcs = partial.findall(".//svg:path", ns)
+            self.assertEqual(len(arcs), 2)
+            self.assertEqual(arcs[0].get("stroke"), "#2eafe8")
+            self.assertEqual(arcs[1].get("stroke"), "#87cef2")
+            self.assertIn("A 28 28 0 1 1", arcs[0].get("d"))
+            self.assertIn("A 21.5 21.5 0 0 1", arcs[1].get("d"))
+            self.assertEqual(partial.findall(".//svg:text", ns), [])
+            full = ET.parse(renderer.render(100, 100))
+            self.assertEqual(len(full.findall(".//svg:circle", ns)), 4)
+            self.assertEqual(renderer.render(-10, 120), renderer.render(0, 100))
+            weekly_only = ET.parse(renderer.render(None, 40))
+            arcs = weekly_only.findall(".//svg:path", ns)
+            self.assertEqual(len(arcs), 1)
+            self.assertEqual(arcs[0].get("stroke"), "#87cef2")
 
 
 if __name__ == "__main__":

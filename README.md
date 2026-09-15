@@ -10,10 +10,9 @@ remaining ChatGPT Codex usage limits on Linux.
 ## Features
 
 - Shows remaining Codex usage and reset times directly in a Plasma panel.
-- Supports icon + bar + percentage, icon + bar, icon + percentage, and
-  icon-only panel layouts.
+- Shows usage consumed as two rounded rings: blue for 5 hours, light blue for weekly.
+- Keeps the panel and tray icon free of percentage text.
 - Displays each available usage window in a native Plasma popup.
-- Uses normal, orange, and red progress colors as limits get low.
 - Sends one desktop warning per 20%, 10%, and 5% threshold/reset window.
 - Refreshes every five minutes and reconnects through the local Codex CLI.
 - Starts its local data service automatically at login.
@@ -73,7 +72,8 @@ creates an autostart entry under `~/.config/autostart`.
 3. Search for **Codex Usage**.
 4. Drag the widget onto the panel.
 
-Use the layout selector in the popup to choose the panel presentation.
+The rings fill clockwise from the top as usage is consumed. Click the icon
+to see remaining percentages and reset times.
 
 ### Portable tray fallback
 

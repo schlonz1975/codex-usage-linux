@@ -16,7 +16,10 @@ PlasmoidItem {
     property var usage: ({"windows": [], "lowest": null})
     readonly property var windows: usage.windows || []
     readonly property int remaining: usage.lowest === null || usage.lowest === undefined ? -1 : usage.lowest
-    readonly property string panelMode: Plasmoid.configuration.panelMode || "full"
+    function usedForWindow(minutes) {
+        const window = windows.find(item => item.windowMinutes === minutes)
+        return window ? Math.max(0, Math.min(100, window.used)) : 0
+    }
 
     Plasmoid.title: i18n("Codex Usage")
     Plasmoid.icon: "codex-usage"
@@ -71,68 +74,46 @@ PlasmoidItem {
     compactRepresentation: Item {
         id: compact
 
-        readonly property bool horizontal: Plasmoid.formFactor === PlasmaCore.Types.Horizontal
-        readonly property bool showBar: horizontal && (root.panelMode === "full" || root.panelMode === "bar")
-        readonly property bool showPercentage: horizontal && (root.panelMode === "full" || root.panelMode === "compact")
-
-        Layout.minimumWidth: horizontal ? implicitWidth : Kirigami.Units.iconSizes.smallMedium
-        Layout.preferredWidth: horizontal ? implicitWidth : Kirigami.Units.iconSizes.medium
+        Layout.minimumWidth: Kirigami.Units.iconSizes.smallMedium
+        Layout.preferredWidth: height
         Layout.fillHeight: true
-        implicitWidth: horizontal
-            ? icon.implicitWidth
-                + (showBar ? battery.implicitWidth + Kirigami.Units.smallSpacing : 0)
-                + (showPercentage ? percentage.implicitWidth + Kirigami.Units.smallSpacing : 0)
-                + Kirigami.Units.smallSpacing * 2
-            : Kirigami.Units.iconSizes.medium
+        implicitWidth: Kirigami.Units.iconSizes.medium
         implicitHeight: Kirigami.Units.iconSizes.medium
 
-        RowLayout {
-            anchors.fill: parent
-            spacing: Kirigami.Units.smallSpacing
+        Canvas {
+            id: rings
+            anchors.centerIn: parent
+            width: Math.min(parent.width, parent.height)
+            height: width
+            antialiasing: true
+            property real fiveHourUsed: root.usedForWindow(300)
+            property real weeklyUsed: root.usedForWindow(10080)
+            onFiveHourUsedChanged: requestPaint()
+            onWeeklyUsedChanged: requestPaint()
+            onWidthChanged: requestPaint()
+            onHeightChanged: requestPaint()
 
-            Kirigami.Icon {
-                id: icon
-                source: "codex-usage"
-                Layout.preferredWidth: Math.min(compact.height * 0.72, Kirigami.Units.iconSizes.medium)
-                Layout.preferredHeight: Layout.preferredWidth
-            }
-
-            Item {
-                id: battery
-                visible: compact.showBar
-                implicitWidth: Kirigami.Units.gridUnit * 2.8
-                implicitHeight: Kirigami.Units.gridUnit * 0.55
-                Layout.preferredWidth: implicitWidth
-                Layout.preferredHeight: implicitHeight
-
-                Rectangle {
-                    anchors.fill: parent
-                    radius: height / 2
-                    color: Kirigami.Theme.textColor
-                    opacity: 0.22
+            onPaint: {
+                const ctx = getContext("2d")
+                ctx.reset()
+                ctx.scale(width / 64, height / 64)
+                ctx.lineWidth = 3.5
+                ctx.lineCap = "round"
+                function ring(radius, used, color) {
+                    ctx.beginPath()
+                    ctx.strokeStyle = "#2b3745"
+                    ctx.arc(32, 32, radius, 0, 2 * Math.PI)
+                    ctx.stroke()
+                    if (used > 0) {
+                        ctx.beginPath()
+                        ctx.strokeStyle = color
+                        ctx.arc(32, 32, radius, -Math.PI / 2,
+                                -Math.PI / 2 + 2 * Math.PI * used / 100)
+                        ctx.stroke()
+                    }
                 }
-
-                Rectangle {
-                    anchors.left: parent.left
-                    anchors.top: parent.top
-                    width: parent.width * Math.max(0, root.remaining) / 100
-                    height: parent.height
-                    radius: height / 2
-                    color: root.remaining <= 10
-                        ? Kirigami.Theme.negativeTextColor
-                        : root.remaining <= 20
-                            ? Kirigami.Theme.neutralTextColor
-                            : Kirigami.Theme.highlightColor
-                }
-            }
-
-            PlasmaComponents.Label {
-                id: percentage
-                visible: compact.showPercentage
-                text: root.remaining >= 0 ? root.remaining + "%" : "—"
-                font.weight: Font.DemiBold
-                font.features: {"tnum": 1}
-                Layout.alignment: Qt.AlignVCenter
+                ring(28, fiveHourUsed, "#2eafe8")
+                ring(21.5, weeklyUsed, "#87cef2")
             }
         }
 
@@ -240,24 +221,6 @@ PlasmoidItem {
 
             RowLayout {
                 Layout.fillWidth: true
-
-                PlasmaComponents.ComboBox {
-                    id: modePicker
-                    model: [
-                        i18n("Icon + bar + percent"),
-                        i18n("Icon + bar"),
-                        i18n("Icon + percent"),
-                        i18n("Icon only")
-                    ]
-                    currentIndex: root.panelMode === "full"
-                        ? 0
-                        : root.panelMode === "bar"
-                            ? 1
-                            : root.panelMode === "compact" ? 2 : 3
-                    onActivated: Plasmoid.configuration.panelMode = ["full", "bar", "compact", "icon"][currentIndex]
-                }
-
-                Item { Layout.fillWidth: true }
 
                 PlasmaComponents.Button {
                     icon.name: "view-refresh"

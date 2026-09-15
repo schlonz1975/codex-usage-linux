@@ -33,6 +33,8 @@ class ServiceSerializationTests(unittest.TestCase):
             result = service._apply_snapshots([snapshot])
 
         payload = json.loads(service.data)
+        self.assertEqual(payload["windows"][0]["used"], 23)
+        self.assertEqual(payload["windows"][0]["windowMinutes"], 10_080)
         self.assertEqual(payload["lowest"], 77)
         self.assertEqual(payload["windows"][0]["remaining"], 77)
         self.assertEqual(payload["windows"][0]["heading"], "Codex · Plus · Weekly limit")

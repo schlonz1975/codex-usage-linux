@@ -98,6 +98,8 @@ class UsageService(dbus.service.Object):
             {
                 "heading": snapshot_heading(snapshot),
                 "remaining": snapshot.remaining_percent,
+                "used": max(0.0, min(100.0, snapshot.used_percent)),
+                "windowMinutes": snapshot.window_minutes,
                 "reset": (
                     reset_countdown(snapshot.resets_at)
                     if snapshot.resets_at

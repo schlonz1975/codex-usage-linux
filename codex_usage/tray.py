@@ -12,7 +12,7 @@ gi.require_version("Notify", "0.7")
 from gi.repository import AyatanaAppIndicator3, GLib, Gtk, Notify  # noqa: E402
 
 from .client import CodexClientError, read_usage
-from .display import DISPLAY_BATTERY, DisplaySettings, StatusIconRenderer
+from .display import StatusIconRenderer
 from .notifications import NotificationMarkers, notification_text
 from .usage import (
     LimitSnapshot,
@@ -42,8 +42,6 @@ class UsageTray:
         self.status_items: list[Gtk.MenuItem] = []
         self.refresh_item = Gtk.MenuItem(label="Refresh")
         self.refresh_item.connect("activate", lambda _item: self.refresh())
-        self.display_item = Gtk.MenuItem()
-        self.display_item.connect("activate", lambda _item: self._toggle_display())
         dashboard_item = Gtk.MenuItem(label="Open Usage Page")
         dashboard_item.connect(
             "activate",
@@ -54,17 +52,15 @@ class UsageTray:
         self.actions = [
             Gtk.SeparatorMenuItem(),
             self.refresh_item,
-            self.display_item,
             dashboard_item,
             Gtk.SeparatorMenuItem(),
             quit_item,
         ]
         self.markers = NotificationMarkers()
-        self.display_settings = DisplaySettings()
         self.icon_renderer = StatusIconRenderer()
-        self.remaining_percent: int | None = None
+        self.snapshots: list[LimitSnapshot] = []
         self.refreshing = False
-        self._update_display_item()
+        self._update_status_icon()
         Notify.init("Codex Usage")
         self._show_message("Connecting to Codex…")
         self.indicator.set_menu(self.menu)
@@ -90,9 +86,10 @@ class UsageTray:
 
     def _apply_snapshots(self, snapshots: list[LimitSnapshot]) -> bool:
         self._finish_refresh()
+        self.snapshots = snapshots
+        self._update_status_icon()
         if not snapshots:
             self._show_message("Usage information unavailable")
-            self.indicator.set_label("—", "100%")
             return GLib.SOURCE_REMOVE
 
         labels: list[str] = []
@@ -106,8 +103,6 @@ class UsageTray:
             )
         self._replace_status_items(labels)
         lowest = min(snapshot.remaining_percent for snapshot in snapshots)
-        self.remaining_percent = lowest
-        self._update_status_icon()
         self.indicator.set_title(f"Codex: {lowest}% left")
 
         for snapshot in snapshots:
@@ -119,7 +114,7 @@ class UsageTray:
     def _show_error(self, message: str) -> bool:
         self._finish_refresh()
         self._show_message(f"Unable to load usage\n{message}")
-        self.indicator.set_label("!", "100%")
+        self.indicator.set_title("Codex: usage unavailable")
         return GLib.SOURCE_REMOVE
 
     def _show_message(self, message: str) -> None:
@@ -146,23 +141,8 @@ class UsageTray:
         self.refresh()
         return GLib.SOURCE_CONTINUE
 
-    def _toggle_display(self) -> None:
-        self.display_settings.toggle()
-        self._update_display_item()
-        self._update_status_icon()
-
-    def _update_display_item(self) -> None:
-        next_mode = (
-            "percentage" if self.display_settings.mode == DISPLAY_BATTERY else "battery bar"
-        )
-        self.display_item.set_label(f"Show {next_mode}")
-
     def _update_status_icon(self) -> None:
-        if self.remaining_percent is None:
-            return
-        icon = self.icon_renderer.render(
-            self.remaining_percent,
-            self.display_settings.mode,
-        )
-        self.indicator.set_icon_full(str(icon), f"Codex: {self.remaining_percent}% left")
+        used = {snapshot.window_minutes: snapshot.used_percent for snapshot in self.snapshots}
+        icon = self.icon_renderer.render(used.get(300), used.get(10_080))
+        self.indicator.set_icon_full(str(icon), "Codex usage: outer 5-hour, inner weekly")
         self.indicator.set_label("", "")
