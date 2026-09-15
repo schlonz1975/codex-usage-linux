@@ -142,7 +142,7 @@ class UsageTray:
         return GLib.SOURCE_CONTINUE
 
     def _update_status_icon(self) -> None:
-        used = {snapshot.window_minutes: snapshot.used_percent for snapshot in self.snapshots}
-        icon = self.icon_renderer.render(used.get(300), used.get(10_080))
+        remaining = {snapshot.window_minutes: snapshot.remaining_percent for snapshot in self.snapshots}
+        icon = self.icon_renderer.render(remaining.get(300), remaining.get(10_080))
         self.indicator.set_icon_full(str(icon), "Codex usage: outer 5-hour, inner weekly")
         self.indicator.set_label("", "")

@@ -16,9 +16,9 @@ PlasmoidItem {
     property var usage: ({"windows": [], "lowest": null})
     readonly property var windows: usage.windows || []
     readonly property int remaining: usage.lowest === null || usage.lowest === undefined ? -1 : usage.lowest
-    function usedForWindow(minutes) {
+    function remainingForWindow(minutes) {
         const window = windows.find(item => item.windowMinutes === minutes)
-        return window ? Math.max(0, Math.min(100, window.used)) : 0
+        return window ? Math.max(0, Math.min(100, window.remaining)) : 0
     }
 
     Plasmoid.title: i18n("Codex Usage")
@@ -86,10 +86,10 @@ PlasmoidItem {
             width: Math.min(parent.width, parent.height)
             height: width
             antialiasing: true
-            property real fiveHourUsed: root.usedForWindow(300)
-            property real weeklyUsed: root.usedForWindow(10080)
-            onFiveHourUsedChanged: requestPaint()
-            onWeeklyUsedChanged: requestPaint()
+            property real fiveHourRemaining: root.remainingForWindow(300)
+            property real weeklyRemaining: root.remainingForWindow(10080)
+            onFiveHourRemainingChanged: requestPaint()
+            onWeeklyRemainingChanged: requestPaint()
             onWidthChanged: requestPaint()
             onHeightChanged: requestPaint()
 
@@ -99,21 +99,21 @@ PlasmoidItem {
                 ctx.scale(width / 64, height / 64)
                 ctx.lineWidth = 3.5
                 ctx.lineCap = "round"
-                function ring(radius, used, color) {
+                function ring(radius, remaining, color) {
                     ctx.beginPath()
                     ctx.strokeStyle = "#2b3745"
                     ctx.arc(32, 32, radius, 0, 2 * Math.PI)
                     ctx.stroke()
-                    if (used > 0) {
+                    if (remaining > 0) {
                         ctx.beginPath()
                         ctx.strokeStyle = color
                         ctx.arc(32, 32, radius, -Math.PI / 2,
-                                -Math.PI / 2 + 2 * Math.PI * used / 100)
+                                -Math.PI / 2 + 2 * Math.PI * remaining / 100)
                         ctx.stroke()
                     }
                 }
-                ring(28, fiveHourUsed, "#2eafe8")
-                ring(21.5, weeklyUsed, "#87cef2")
+                ring(28, fiveHourRemaining, "#2eafe8")
+                ring(21.5, weeklyRemaining, "#87cef2")
             }
         }
 

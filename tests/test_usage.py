@@ -112,7 +112,7 @@ class UsageTests(unittest.TestCase):
             self.assertFalse(markers.should_notify(snapshot))
             self.assertFalse(NotificationMarkers(path).should_notify(snapshot))
 
-    def test_ring_icons_cover_empty_partial_and_full_usage(self) -> None:
+    def test_ring_icons_cover_empty_partial_and_full_remaining_limits(self) -> None:
         ns = {"svg": "http://www.w3.org/2000/svg"}
         with tempfile.TemporaryDirectory() as directory:
             renderer = StatusIconRenderer(Path(directory))
