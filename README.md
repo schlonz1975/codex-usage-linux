@@ -93,6 +93,11 @@ details or percentages:
 codex-usage --check
 ```
 
+If the widget reports an expired or revoked sign-in (`401` / `token_revoked`),
+it attempts one token refresh through the Codex CLI. If that fails, run
+`codex login` in a terminal, complete ChatGPT sign-in, and click **Refresh**.
+Signing in to the usage webpage alone does not update the CLI credentials.
+
 Run the automated test suite:
 
 ```bash

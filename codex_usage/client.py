@@ -67,8 +67,16 @@ def read_usage(timeout: float = 20.0) -> list[LimitSnapshot]:
         _send(process, {"method": "initialized", "params": {}})
         _send(process, {"method": "account/rateLimits/read", "id": 1, "params": {}})
         response = _wait_for_response(process, 1, deadline)
+        if "error" in response and _is_auth_error(_error_message(response)):
+            _send(process, {"method": "account/read", "id": 2,
+                            "params": {"refreshToken": True}})
+            refreshed = _wait_for_response(process, 2, deadline)
+            if "error" in refreshed:
+                raise CodexClientError(_friendly_error(refreshed))
+            _send(process, {"method": "account/rateLimits/read", "id": 3, "params": {}})
+            response = _wait_for_response(process, 3, deadline)
         if "error" in response:
-            raise CodexClientError(_error_message(response))
+            raise CodexClientError(_friendly_error(response))
         result = response.get("result")
         if not isinstance(result, dict):
             raise CodexClientError("Codex returned an invalid usage response")
@@ -125,3 +133,18 @@ def _error_message(response: dict[str, Any]) -> str:
     if isinstance(error, dict) and isinstance(error.get("message"), str):
         return error["message"]
     return "Codex usage information is unavailable"
+
+
+def _is_auth_error(message: str) -> bool:
+    return any(marker in message.lower() for marker in (
+        "401", "token_revoked", "invalidated oauth token", "refresh_token",
+        "refresh token", "not logged in", "sign in again",
+    ))
+
+
+def _friendly_error(response: dict[str, Any]) -> str:
+    message = _error_message(response)
+    if _is_auth_error(message):
+        return ("Codex sign-in has expired or was revoked. "
+                "Run `codex login` in a terminal, complete sign-in, then click Refresh.")
+    return message
